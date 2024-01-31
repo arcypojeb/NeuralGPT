@@ -16,6 +16,10 @@ client_ports = []
 st.set_page_config(layout="wide")
 websocket_server = None
 
+GOOGLE_CSE_ID = "f3882ab3b67cc4923"
+GOOGLE_API_KEY = "AIzaSyBNvtKE35EAeYO-ECQlQoZO01RSHWhfIws"
+FIREWORKS_API_KEY = "xbwGxyTyOf7ats2GcEU0Pj62kpZBVZa2r6i5lKbKG99LFG38"
+
 # Set up the SQLite database
 db = sqlite3.connect('chat-hub.db')
 cursor = db.cursor()
@@ -25,19 +29,17 @@ db.commit()
 system_instruction = "You are now integrated with a local websocket server in a project of hierarchical cooperative multi-agent framework called NeuralGPT. Your main job is to coordinate simultaneous work of multiple LLMs connected to you as clients. Each LLM has a model (API) specific ID to help you recognize different clients in a continuous chat thread (template: <NAME>-agent and/or <NAME>-client). Your chat memory module is integrated with a local SQL database with chat history. Your primary objective is to maintain the logical and chronological order while answering incoming messages and to send your answers to the correct clients to maintain synchronization of the question->answer logic. However, please note that you may choose to ignore or not respond to repeating inputs from specific clients as needed to prevent unnecessary traffic."
 
 # Define the function for sending an error message
-def sendErrorMessage(ws, errorMessage):
-    errorResponse = {'error': errorMessage}
-    ws.send(json.dumps(errorResponse))
-
-# Define the function for asking a question to the chatbot
-async def askQuestion(question):
+async def chatCompletion(question: str):
+    fireworks.client.api_key = FIREWORKS_API_KEY
     try:
+        # Connect to the database and get the last 30 messages
         db = sqlite3.connect('chat-hub.db')
         cursor = db.cursor()
-        cursor.execute("SELECT * FROM messages ORDER BY timestamp DESC LIMIT 30")
+        cursor.execute("SELECT * FROM messages ORDER BY timestamp DESC LIMIT 10")
         messages = cursor.fetchall()
         messages.reverse()
-
+                                        
+        # Extract user inputs and generated responses from the messages
         past_user_inputs = []
         generated_responses = []
 
@@ -46,22 +48,30 @@ async def askQuestion(question):
                 past_user_inputs.append(message[2])
             else:
                 generated_responses.append(message[2])
-                        
-        response = await g4f.ChatCompletion.create_async(
-            model=g4f.models.gpt_4,
-            provider=g4f.Provider.Bing,
+
+        # Prepare data to send to the chatgpt-api.shn.hk           
+        response = fireworks.client.ChatCompletion.create(
+            model="accounts/fireworks/models/llama-v2-7b-chat",
             messages=[
             {"role": "system", "content": system_instruction},
-            *[{"role": "user", "content": message} for message in past_user_inputs],
-            *[{"role": "assistant", "content": message} for message in generated_responses],
+            *[{"role": "user", "content": input} for input in past_user_inputs],
+            *[{"role": "assistant", "content": response} for response in generated_responses],
             {"role": "user", "content": question}
-            ])
+            ],
+            stream=False,
+            n=1,
+            max_tokens=2500,
+            temperature=0.5,
+            top_p=0.7, 
+            )
+
+        answer = response.choices[0].message.content
+        print(answer)
+        return str(answer)
         
-        print(response)            
-        return response
-            
-    except Exception as e:
-        print(e)
+    except Exception as error:
+        print("Error while fetching or processing the response:", error)
+        return "Error: Unable to generate a response."
 
 async def handleWebSocket(ws):              
     instruction = "Hello! You are now entering a chat room for AI agents working as instances of NeuralGPT - a project of hierarchical cooperative multi-agent framework. Keep in mind that you are speaking with another chatbot. Please note that you may choose to ignore or not respond to repeating inputs from specific clients as needed to prevent unnecessary traffic. If you're unsure what you should do, ask the instance of higher hierarchy (server)" 
@@ -108,18 +118,41 @@ async def start_websockets(websocketPort):
 async def start_client(clientPort):
     global ws
     output_Msg = st.chat_message("assistant")
-    input_Msg = st.chat_message("ai")
-    human_Msg = st.chat_message("human")
+    input_Msg = st.chat_message("ai")    
     uri = f'ws://localhost:{clientPort}'
     client_ports.append(clientPort)
-    async with websockets.connect(uri) as ws:        
+    async with websockets.connect(uri) as ws:
         while True:
+            print(f"Connecting to server at port: {clientPort}...")
             # Listen for messages from the server            
             input_message = await ws.recv()
             input_Msg.markdown(input_message)
             output_message = await askQuestion(input_message)
-            input_Msg.markdown(output_message)
+            output_Msg.markdown(output_message)
             await ws.send(json.dumps(output_message))            
+
+async def handleUser(userInput):      
+    user_input = st.chat_message("human")
+    user_input.markdown(userInput)
+    timestamp = datetime.datetime.now().isoformat()
+    sender = 'client'
+    db = sqlite3.connect('chat-hub.db')
+    db.execute('INSERT INTO messages (sender, message, timestamp) VALUES (?, ?, ?)',
+                (sender, userInput, timestamp))
+    db.commit()
+    try:
+        response = await askQuestion(userInput)        
+        server_response = st.chat_message("assistant")
+        server_response.markdown(response)
+        serverSender = 'server'
+        timestamp = datetime.datetime.now().isoformat()
+        db = sqlite3.connect('chat-hub.db')
+        db.execute('INSERT INTO messages (sender, message, timestamp) VALUES (?, ?, ?)',
+                    (serverSender, response, timestamp))
+        db.commit()
+
+    except Exception as e:
+        print(f"Error: {e}")
 
 # Stop the WebSocket server
 async def stop_websockets():    
@@ -141,24 +174,32 @@ async def stop_client():
     print("Stopping WebSocket client...")
 
 async def main():
+    userInput = st.chat_input("User input")    
     websocketPort = st.sidebar.slider('Server port', min_value=1000, max_value=9999, value=1000)
     startServer = st.sidebar.button('Start websocket server')
     clientPort = st.sidebar.slider('Client port', min_value=1000, max_value=9999, value=1000)
     startClient = st.sidebar.button('Connect client to server')
     st.sidebar.text("Server ports:")
     serverPorts = st.sidebar.container(border=True)
-    serverPorts.text("Ports")
+    serverPorts.text("Local ports")
     st.sidebar.text("Client ports")
-    clientPorts = st.sidebar.container()
+    clientPorts = st.sidebar.container(border=True)
+    clientPorts.text("Connected ports")
 
+    if userInput:        
+        print(f"User B: {userInput}")
+        srvr_response = await handleUser(userInput)
+        print(f"Server: {srvr_response}")
+        
     if startServer:
         server_ports.append(websocketPort)
         serverPorts.markdown(server_ports)
         await start_websockets(websocketPort)
         
     if startClient:
-        await start_client(clientPort)
         client_ports.append(clientPort)
-        clientPorts.write(client_ports)
+        clientPorts.markdown(client_ports)
+        await start_client(clientPort)
+               
 
 asyncio.run(main())
