@@ -12,3 +12,4 @@ fireworks-ai
 langchain
 PyCharacterAI
 forefront
+streamlit
