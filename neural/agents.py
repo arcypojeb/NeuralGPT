@@ -18,6 +18,15 @@ from AgentGPT import AgentsGPT
 from forefront import ForefrontClient
 from PyCharacterAI import Client
 
+GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+FIREWORKS_API_KEY = os.getenv("FIREWORKS_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+FOREFRONT_API_KEY = os.getenv("FOREFRONT_API_KEY")
+CHARACTERAI_API_KEY = os.getenv("CHARACTERAI_API_KEY")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+HUGGINGFACEHUB_API_TOKEN = os.getenv("HUGGINGFACEHUB_API_TOKEN")
+
 servers = {}
 clients = {}
 inputs = []
@@ -102,18 +111,18 @@ class Llama2:
          
     # Define the handler function that will process incoming messages
     async def handlerFire(self, websocket):
-        self.stat.empty()
-        self.cont.empty()
-        self.status = self.cont.status(label=self.srv_name2, state="running", expanded=True)
-        self.status.write(self.clients)
-        self.state = self.stat.status(label=self.srv_name2, state="running", expanded=True)
-        self.state.write(self.clients)  
         instruction = "Hello! You are now entering a chat room for AI agents working as instances of NeuralGPT - a project of hierarchical cooperative multi-agent framework. Keep in mind that you are speaking with another chatbot. Please note that you may choose to ignore or not respond to repeating inputs from specific clients as needed to prevent unnecessary traffic. If you're unsure what you should do, ask the instance of higher hierarchy (server)" 
         print('New connection')
         await websocket.send(instruction)
         db = sqlite3.connect('chat-hub.db')
         # Loop forever
         while True:
+            self.stat.empty()
+            self.cont.empty()
+            self.status = self.cont.status(label=self.srv_name2, state="running", expanded=True)
+            self.status.write(self.clients)
+            self.state = self.stat.status(label=self.srv_name2, state="running", expanded=True)
+            self.state.write(self.clients)     
             # Receive a message from the client
             message = await websocket.recv()
             # Print the message
@@ -286,14 +295,14 @@ class Llama2:
         await self.startClient(clientPort)
 
     async def ask_Forefront(self, question):
-        api = "sk-9nDzLqZ7Umy7hmp1kZRPun628aSpABt6"
+        api = FOREFRONT_API_KEY
         forefront = ForefrontAI(api)
         response = await forefront.handleInput(question)
         print(response)
         return response
                 
     async def ask_Claude(self, question):
-        api = "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"
+        api = ANTHROPIC_API_KEY
         claude = Claude3(api)
         response = await claude.handleInput(question)
         print(response)
@@ -484,7 +493,7 @@ class Llama2:
 
     async def askCharacter(self, question):
         characterID = await self.pickCharacter(question)
-        token = "d9016ef1aa499a1addb44049cedece57e21e8cbb"
+        token = CHARACTERAI_API_KEY
         character = CharacterAI(token, characterID)
         answer = await character.handleInput(question)
         return answer
@@ -554,18 +563,18 @@ class Copilot:
          
     # Define the handler function that will process incoming messages
     async def handler(self, websocket):
-        self.stat.empty()
-        self.cont.empty()
-        self.status = self.cont.status(label=self.srv_name2, state="running", expanded=True)
-        self.status.write(self.clients)
-        self.state = self.stat.status(label=self.srv_name2, state="running", expanded=True)
-        self.state.write(self.clients)  
         instruction = "Hello! You are now entering a chat room for AI agents working as instances of NeuralGPT - a project of hierarchical cooperative multi-agent framework. Keep in mind that you are speaking with another chatbot. Please note that you may choose to ignore or not respond to repeating inputs from specific clients as needed to prevent unnecessary traffic. If you're unsure what you should do, ask the instance of higher hierarchy (server)" 
         print('New connection')
         await websocket.send(instruction)
         db = sqlite3.connect('chat-hub.db')
         # Loop forever
         while True:
+            self.stat.empty()
+            self.cont.empty()
+            self.status = self.cont.status(label=self.srv_name2, state="running", expanded=True)
+            self.status.write(self.clients)
+            self.state = self.stat.status(label=self.srv_name2, state="running", expanded=True)
+            self.state.write(self.clients)     
             # Receive a message from the client
             message = await websocket.recv()
             # Print the message
@@ -911,27 +920,27 @@ class Copilot:
 
     async def askCharacter(self, question):
         characterID = await self.pickCharacter(question)
-        token = "d9016ef1aa499a1addb44049cedece57e21e8cbb"
+        token = CHARACTERAI_API_KEY
         character = CharacterAI(token, characterID)
         answer = await character.handleInput(question)
         return answer
 
     async def ask_Forefront(self, question):
-        api = "sk-9nDzLqZ7Umy7hmp1kZRPun628aSpABt6"
+        api = FOREFRONT_API_KEY
         forefront = ForefrontAI(api)
         response = await forefront.handleInput(question)
         print(response)
         return response
                 
     async def ask_Claude(self, question):
-        api = "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"
+        api = ANTHROPIC_API_KEY
         claude = Claude3(api)
         response = await claude.handleInput(question)
         print(response)
         return response
 
     async def askLlama(self, question):
-        api = "WZGOkHQbZULIzA6u83kyLGBKPigs1HmK9Ec8DEKmGOtu45zx"
+        api = FIREWORKS_API_KEY
         llama = Llama2(api)
         response = await llama.handleInput(question)
         print(response)
@@ -1063,18 +1072,18 @@ class ChatGPT:
 
     # Define the handler function that will process incoming messages
     async def handler(self, websocket):
-        self.stat.empty()
-        self.cont.empty()
-        self.status = self.cont.status(label=self.srv_name2, state="running", expanded=True)
-        self.status.write(self.clients)
-        self.state = self.stat.status(label=self.srv_name2, state="running", expanded=True)
-        self.state.write(self.clients)  
         instruction = "Hello! You are now entering a chat room for AI agents working as instances of NeuralGPT - a project of hierarchical cooperative multi-agent framework. Keep in mind that you are speaking with another chatbot. Please note that you may choose to ignore or not respond to repeating inputs from specific clients as needed to prevent unnecessary traffic. If you're unsure what you should do, ask the instance of higher hierarchy (server)" 
         print('New connection')
         await websocket.send(instruction)
         db = sqlite3.connect('chat-hub.db')
         # Loop forever
         while True:
+            self.stat.empty()
+            self.cont.empty()
+            self.status = self.cont.status(label=self.srv_name2, state="running", expanded=True)
+            self.status.write(self.clients)
+            self.state = self.stat.status(label=self.srv_name2, state="running", expanded=True)
+            self.state.write(self.clients)     
             # Receive a message from the client
             message = await websocket.recv()
             # Print the message
@@ -1413,27 +1422,27 @@ class ChatGPT:
 
     async def askCharacter(self, question):
         characterID = await self.pickCharacter(question)
-        token = "d9016ef1aa499a1addb44049cedece57e21e8cbb"
+        token = CHARACTERAI_API_KEY
         character = CharacterAI(token, characterID)
         answer = await character.handleInput(question)
         return answer
 
     async def ask_Forefront(self, question):
-        api = "sk-9nDzLqZ7Umy7hmp1kZRPun628aSpABt6"
+        api = FOREFRONT_API_KEY
         forefront = ForefrontAI(api)
         response = await forefront.handleInput(question)
         print(response)
         return response
 
     async def ask_Claude(self, question):
-        api = "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"
+        api = ANTHROPIC_API_KEY
         claude = Claude3(api)
         response = await claude.handleInput(question)
         print(response)
         return response
 
     async def askLlama(self, question):
-        api = "WZGOkHQbZULIzA6u83kyLGBKPigs1HmK9Ec8DEKmGOtu45zx"
+        api = FIREWORKS_API_KEY
         llama = Llama2(api)
         response = await llama.handleInput(question)
         print(response)
@@ -1523,18 +1532,18 @@ class Claude3:
             print(f"Error: {e}")
             
     async def handlerClaude(self, websocket):
-        self.stat.empty()
-        self.cont.empty()
-        self.status = self.cont.status(label=self.srv_name6, state="running", expanded=True)
-        self.status.write(self.clients)
-        self.state = self.stat.status(label=self.srv_name6, state="running", expanded=True)
-        self.state.write(self.clients)
         instruction = "Hello! You are now entering a chat room for AI agents working as instances of NeuralGPT - a project of hierarchical cooperative multi-agent framework. Keep in mind that you are speaking with another chatbot. Please note that you may choose to ignore or not respond to repeating inputs from specific clients as needed to prevent unnecessary traffic. If you're unsure what you should do, ask the instance of higher hierarchy (server)" 
         print('New connection')
         await websocket.send(instruction)
         db = sqlite3.connect('chat-hub.db')
         # Loop forever
         while True:
+            self.stat.empty()
+            self.cont.empty()
+            self.status = self.cont.status(label=self.srv_name2, state="running", expanded=True)
+            self.status.write(self.clients)
+            self.state = self.stat.status(label=self.srv_name2, state="running", expanded=True)
+            self.state.write(self.clients)     
             self.websocket = websocket
             # Receive a message from the client
             message = await websocket.recv()
@@ -1869,20 +1878,20 @@ class Claude3:
 
     async def askCharacter(self, question):
         characterID = await self.pickCharacter(question)
-        token = "d9016ef1aa499a1addb44049cedece57e21e8cbb"
+        token = CHARACTERAI_API_KEY
         character = CharacterAI(token, characterID)
         answer = await character.handleInput(question)
         return answer
 
     async def ask_Forefront(self, question):
-        api = "sk-9nDzLqZ7Umy7hmp1kZRPun628aSpABt6"
+        api = FOREFRONT_API_KEY
         forefront = ForefrontAI(api)
         response = await forefront.handleInput(question)
         print(response)
         return response
 
     async def askLlama(self, question):
-        api = "WZGOkHQbZULIzA6u83kyLGBKPigs1HmK9Ec8DEKmGOtu45zx"
+        api = FIREWORKS_API_KEY
         llama = Llama2(api)
         response = await llama.handleInput(question)
         print(response)
@@ -1972,19 +1981,19 @@ class ForefrontAI:
         except Exception as e:
             print(e)
 
-    async def handlerForefront(self, websocket):
-        self.stat.empty()
-        self.cont.empty()
-        self.status = self.cont.status(label=self.srv_name5, state="running", expanded=True)
-        self.status.write(self.clients)
-        self.state = self.stat.status(label=self.srv_name5, state="running", expanded=True)
-        self.state.write(self.clients)           
+    async def handlerForefront(self, websocket):        
         instruction = "Hello! You are now entering a chat room for AI agents working as instances of NeuralGPT - a project of hierarchical cooperative multi-agent framework. Keep in mind that you are speaking with another chatbot. Please note that you may choose to ignore or not respond to repeating inputs from specific clients as needed to prevent unnecessary traffic. If you're unsure what you should do, ask the instance of higher hierarchy (server)" 
         print('New connection')
         await websocket.send(instruction)
         db = sqlite3.connect('chat-hub.db')
         # Loop forever
         while True:
+            self.stat.empty()
+            self.cont.empty()
+            self.status = self.cont.status(label=self.srv_name2, state="running", expanded=True)
+            self.status.write(self.clients)
+            self.state = self.stat.status(label=self.srv_name2, state="running", expanded=True)
+            self.state.write(self.clients)     
             # Receive a message from the client
             message = await websocket.recv()
             # Print the message
@@ -2336,14 +2345,14 @@ class ForefrontAI:
         return answer
                 
     async def ask_Claude(self, question):
-        api = "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"
+        api = ANTHROPIC_API_KEY
         claude = Claude3(api)
         response = await claude.handleInput(question)
         print(response)
         return response
 
     async def askLlama(self, question):
-        api = "WZGOkHQbZULIzA6u83kyLGBKPigs1HmK9Ec8DEKmGOtu45zx"
+        api = FIREWORKS_API_KEY
         llama = Llama2(api)
         response = await llama.handleInput(question)
         print(response)
@@ -2400,19 +2409,19 @@ class CharacterAI:
         except Exception as e:
             print(f"Error: {e}")
 
-    async def handler(self, websocket):
-        self.stat.empty()
-        self.cont.empty()
-        self.status = self.cont.status(label=self.srv_name5, state="running", expanded=True)
-        self.status.write(self.clients)
-        self.state = self.stat.status(label=self.srv_name5, state="running", expanded=True)
-        self.state.write(self.clients)           
+    async def handler(self, websocket):       
         instruction = "Hello! You are now entering a chat room for AI agents working as instances of NeuralGPT - a project of hierarchical cooperative multi-agent framework. Keep in mind that you are speaking with another chatbot. Please note that you may choose to ignore or not respond to repeating inputs from specific clients as needed to prevent unnecessary traffic. If you're unsure what you should do, ask the instance of higher hierarchy (server)" 
         print('New connection')
         await websocket.send(instruction)
         db = sqlite3.connect('chat-hub.db')
         # Loop forever
         while True:
+            self.stat.empty()
+            self.cont.empty()
+            self.status = self.cont.status(label=self.srv_name2, state="running", expanded=True)
+            self.status.write(self.clients)
+            self.state = self.stat.status(label=self.srv_name2, state="running", expanded=True)
+            self.state.write(self.clients)     
             self.websocket = websocket
             # Receive a message from the client
             message = await websocket.recv()
@@ -2477,7 +2486,7 @@ class CharacterAI:
                 input_Msg.markdown(input_message)
                 try:
                     response = await self.handleInput(input_message)
-                    res1 = f"Forefront client: {response}"
+                    res1 = f"Character.ai client: {response}"
                     await websocket.send(res1)
                     continue
 
@@ -2714,21 +2723,21 @@ class CharacterAI:
         return response
 
     async def ask_Forefront(self, question):
-        api = "sk-9nDzLqZ7Umy7hmp1kZRPun628aSpABt6"
+        api = FOREFRONT_API_KEY
         forefront = ForefrontAI(api)
         response = await forefront.handleInput(question)
         print(response)
         return response
 
     async def ask_Claude(self, question):
-        api = "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"
+        api = ANTHROPIC_API_KEY
         claude = Claude3(api)
         response = await claude.handleInput(question)
         print(response)
         return response
 
     async def askLlama(self, question):
-        api = "WZGOkHQbZULIzA6u83kyLGBKPigs1HmK9Ec8DEKmGOtu45zx"
+        api = FIREWORKS_API_KEY
         llama = Llama2(api)
         response = await llama.handleInput(question)
         print(response)
@@ -2792,19 +2801,19 @@ class Chaindesk:
         except Exception as e:
             print(e)
 
-    async def handler(self, websocket):
-        self.stat.empty()
-        self.cont.empty()
-        self.status = self.cont.status(label=self.srv_name5, state="running", expanded=True)
-        self.status.write(self.clients)
-        self.state = self.stat.status(label=self.srv_name5, state="running", expanded=True)
-        self.state.write(self.clients)           
+    async def handler(self, websocket):       
         instruction = "Hello! You are now entering a chat room for AI agents working as instances of NeuralGPT - a project of hierarchical cooperative multi-agent framework. Keep in mind that you are speaking with another chatbot. Please note that you may choose to ignore or not respond to repeating inputs from specific clients as needed to prevent unnecessary traffic. If you're unsure what you should do, ask the instance of higher hierarchy (server)" 
         print('New connection')
         await websocket.send(instruction)
         db = sqlite3.connect('chat-hub.db')
         # Loop forever
         while True:
+            self.stat.empty()
+            self.cont.empty()
+            self.status = self.cont.status(label=self.srv_name2, state="running", expanded=True)
+            self.status.write(self.clients)
+            self.state = self.stat.status(label=self.srv_name2, state="running", expanded=True)
+            self.state.write(self.clients)     
             self.websocket = websocket
             # Receive a message from the client
             message = await websocket.recv()
@@ -3119,27 +3128,27 @@ class Chaindesk:
 
     async def askCharacter(self, question):
         characterID = await self.pickCharacter(question)
-        token = "d9016ef1aa499a1addb44049cedece57e21e8cbb"
+        token = CHARACTERAI_API_KEY
         character = CharacterAI(token, characterID)
         answer = await character.handleInput(question)
         return answer
 
     async def ask_Forefront(self, question):
-        api = "sk-9nDzLqZ7Umy7hmp1kZRPun628aSpABt6"
+        api = FOREFRONT_API_KEY
         forefront = ForefrontAI(api)
         response = await forefront.handleInput(question)
         print(response)
         return response
 
     async def ask_Claude(self, question):
-        api = "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"
+        api = ANTHROPIC_API_KEY
         claude = Claude3(api)
         response = await claude.handleInput(question)
         print(response)
         return response
 
     async def askLlama(self, question):
-        api = "WZGOkHQbZULIzA6u83kyLGBKPigs1HmK9Ec8DEKmGOtu45zx"
+        api = FIREWORKS_API_KEY
         llama = Llama2(api)
         response = await llama.handleInput(question)
         print(response)
@@ -3201,19 +3210,19 @@ class Flowise:
         except Exception as e:
             print(e)
 
-    async def handler(self, websocket):
-        self.stat.empty()
-        self.cont.empty()
-        self.status = self.cont.status(label=self.srv_name5, state="running", expanded=True)
-        self.status.write(self.clients)
-        self.state = self.stat.status(label=self.srv_name5, state="running", expanded=True)
-        self.state.write(self.clients)           
+    async def handler(self, websocket):        
         instruction = "Hello! You are now entering a chat room for AI agents working as instances of NeuralGPT - a project of hierarchical cooperative multi-agent framework. Keep in mind that you are speaking with another chatbot. Please note that you may choose to ignore or not respond to repeating inputs from specific clients as needed to prevent unnecessary traffic. If you're unsure what you should do, ask the instance of higher hierarchy (server)" 
         print('New connection')
         await websocket.send(instruction)
         db = sqlite3.connect('chat-hub.db')
         # Loop forever
         while True:
+            self.stat.empty()
+            self.cont.empty()
+            self.status = self.cont.status(label=self.srv_name2, state="running", expanded=True)
+            self.status.write(self.clients)
+            self.state = self.stat.status(label=self.srv_name2, state="running", expanded=True)
+            self.state.write(self.clients)     
             # Receive a message from the client
             message = await websocket.recv()
             # Print the message
@@ -3530,27 +3539,27 @@ class Flowise:
 
     async def askCharacter(self, question):
         characterID = await self.pickCharacter(question)
-        token = "d9016ef1aa499a1addb44049cedece57e21e8cbb"
+        token = CHARACTERAI_API_KEY
         character = CharacterAI(token, characterID)
         answer = await character.handleInput(question)
         return answer
 
     async def ask_Forefront(self, question):
-        api = "sk-9nDzLqZ7Umy7hmp1kZRPun628aSpABt6"
+        api = FOREFRONT_API_KEY
         forefront = ForefrontAI(api)
         response = await forefront.handleInput(question)
         print(response)
         return response
 
     async def ask_Claude(self, question):
-        api = "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"
+        api = ANTHROPIC_API_KEY
         claude = Claude3(api)
         response = await claude.handleInput(question)
         print(response)
         return response
 
     async def askLlama(self, question):
-        api = "WZGOkHQbZULIzA6u83kyLGBKPigs1HmK9Ec8DEKmGOtu45zx"
+        api = FIREWORKS_API_KEY
         llama = Llama2(api)
         response = await llama.handleInput(question)
         print(response)
